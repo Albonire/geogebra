@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoGebra Full Screen</title>
+    <script src="https://www.geogebra.org/apps/deployggb.js"></script>
+    <style>
+        /* 1. CSS para Pantalla Completa Real */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Evita barras de scroll */
+        }
+        #ggb-element {
+            display: block;
+            width: 100vw;   /* 100% del ancho de la ventana */
+            height: 100vh;  /* 100% del alto de la ventana */
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Contenedor único que ocupa todo -->
+    <div id="ggb-element"></div>
+
+    <script>
+        var params = {
+            "appName": "classic",
+            // IMPORTANTE: Al no poner width/height fijos y usar CSS 100%, 
+            // GeoGebra se adapta al contenedor.
+            "showToolBar": true,
+            "showAlgebraInput": true,
+            "showMenuBar": true,
+            "language": "es", 
+            "allowStyleBar": true,
+            "borderColor": "#ffffff"
+        };
+
+        var applet = new GGBApplet(params, true);
+        
+        // Inyectar y luego ejecutar la magia automáticamente
+        window.onload = function() {
+            applet.inject('ggb-element');
+            // Esperamos un poco a que cargue la interfaz completa
+            verificarCarga();
+        };
+
+        function verificarCarga() {
+            // Buscamos si el motor está listo
+            if (window.ggbApplet && typeof window.ggbApplet.evalCommand === "function") {
+                generarGraficaSilenciosa();
+            } else {
+                setTimeout(verificarCarga, 500);
+            }
+        }
+
+        function esperar(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function generarGraficaSilenciosa() {
+            var ggb = window.ggbApplet;
+
+            // 1. Configuración Visual
+            ggb.setCoordSystem(-1, 8, -10, 80); 
+            ggb.setGridVisible(true);
+            ggb.setAxisLabels(1, "t (s)", "T (°C)");
+            
+            // 2. Curvas (Soluciones Analíticas directas)
+            await esperar(100);
+            ggb.evalCommand("T1(x) = 140*exp(-2x) - 70*exp(-4x)");
+            ggb.setColor("T1", 220, 0, 0); 
+            ggb.setCaption("T1", "CPU");
+            ggb.setLabelVisible("T1", true);
+
+            await esperar(100);
+            ggb.evalCommand("T2(x) = exp(-x)*(40*cos(2x) + 25*sin(2x))");
+            ggb.setColor("T2", 0, 0, 220); 
+            ggb.setCaption("T2", "GPU");
+            ggb.setLabelVisible("T2", true);
+
+            // 3. Etiquetas
+            ggb.evalCommand("Text(\"Inicio CPU\", (0.2, 72))");
+            ggb.evalCommand("Text(\"Inicio GPU\", (0.2, 35))");
+            
+            // 4. Intersección
+            await esperar(100);
+            ggb.evalCommand("P = Intersect(T1, T2, 0, 5)");
+            ggb.setLabelVisible("P", true);
+            ggb.setCaption("P", "Cruce");
+
+            // No mostramos ningún mensaje de alerta ni texto en HTML
+        }
+    </script>
+</body>
+</html>
